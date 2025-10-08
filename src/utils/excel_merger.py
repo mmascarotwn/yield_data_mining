@@ -149,6 +149,7 @@ class ExcelMerger:
     def align_columns(self, main_df: pd.DataFrame, secondary_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Align columns between two DataFrames to ensure they have the same structure.
+        Preserves the column order from the main DataFrame.
         
         Args:
             main_df: Main DataFrame
@@ -177,10 +178,21 @@ class ExcelMerger:
                     aligned_secondary[col] = None
                     logger.info(f"Added missing column '{col}' to secondary DataFrame")
             
-            # Reorder columns to match
-            column_order = sorted(all_cols)
+            # Preserve the original column order from main DataFrame
+            # Start with main file's column order
+            main_column_order = list(main_df.columns)
+            
+            # Add any new columns from secondary file at the end
+            additional_cols = [col for col in secondary_df.columns if col not in main_column_order]
+            column_order = main_column_order + additional_cols
+            
+            # Reorder both DataFrames to match the preserved order
             aligned_main = aligned_main[column_order]
             aligned_secondary = aligned_secondary[column_order]
+            
+            logger.info(f"Preserved original column order from main file: {main_column_order}")
+            if additional_cols:
+                logger.info(f"Added new columns from secondary file: {additional_cols}")
             
             return aligned_main, aligned_secondary
             
