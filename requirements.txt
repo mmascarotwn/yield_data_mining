@@ -8,5 +8,12 @@ tkinter  # Usually comes with Python, but listed for completeness
 
 # Optional: Additional data analysis libraries
 numpy>=1.24.0
+
+# Web scraping dependencies (optional - for web_scraper.py)
+# Install these if you plan to use the web scraping functionality:
+# pip install selenium beautifulsoup4 requests
+selenium>=4.15.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
 matplotlib>=3.7.0
 seaborn>=0.12.0
