@@ -1,15 +1,33 @@
-# Excel File Merger
+# Excel File Merger & Yield Calculator
 
-A Python module that merges two Excel files with automatic duplicate detection and removal.
+A comprehensive Python toolkit for Excel file processing with merging capabilities and yield calculations.
+
+## Modules
+
+### 1. Excel File Merger
+Merges two Excel files with automatic duplicate detection and removal.
+
+### 2. Yield Calculator  
+Adds e_yield and asm_yield columns to Excel files with flexible calculation methods.
 
 ## Features
 
+### Excel Merger Features
 - 🔍 **Automatic Duplicate Detection**: Identifies and removes duplicate rows when merging
+- 📊 **Multi-Sheet Support**: Automatically processes all sheets with matching names
 - 📁 **GUI File Selection**: User-friendly popup dialogs for file selection
 - 🔄 **Column Alignment**: Automatically aligns columns between different Excel files
 - 💾 **Safe Saving**: Creates backups before overwriting files
-- 📊 **Detailed Logging**: Comprehensive logging of the merge process
+- 📈 **Detailed Statistics**: Per-sheet and total merge statistics
 - ⚡ **Easy to Use**: Simple one-function call for complete merging
+
+### Yield Calculator Features  
+- 📊 **Multi-Sheet Processing**: Handles Excel files with multiple worksheets
+- 🔢 **Flexible Calculations**: Multiple methods for calculating yield values
+- 📁 **GUI Interface**: Easy file selection and parameter input
+- 💾 **Safe Processing**: Creates backups before modification
+- 📈 **Comprehensive Logging**: Detailed process tracking and statistics
+- ⚡ **User-Friendly**: Simple interface for complex calculations
 
 ## Installation
 
@@ -25,7 +43,24 @@ A Python module that merges two Excel files with automatic duplicate detection a
 
 ## Usage
 
-### Simple Usage (Recommended)
+### Running the Demo
+
+```bash
+# Excel Merger Demo
+python demo_excel_merger.py
+
+# Yield Calculator Demo  
+python demo_yield_calculator.py
+
+# Advanced merger demo with step-by-step control
+python demo_excel_merger.py --advanced
+```
+
+## Usage Examples
+
+### Excel Merger Usage
+
+#### Simple Usage (Recommended)
 
 ```python
 from src.utils.excel_merger import merge_excel_files
@@ -34,7 +69,7 @@ from src.utils.excel_merger import merge_excel_files
 success = merge_excel_files()
 ```
 
-### Advanced Usage
+#### Advanced Usage
 
 ```python
 from src.utils.excel_merger import ExcelMerger
@@ -51,113 +86,184 @@ if merger.merge_files():
     merger.save_merged_file()
 ```
 
-### Running the Demo
+### Yield Calculator Usage
 
-```bash
-# Simple demo
-python demo_excel_merger.py
+#### Simple Usage (Recommended)
 
-# Advanced demo with step-by-step control
-python demo_excel_merger.py --advanced
+```python
+from src.utils.yield_calculator import add_yield_columns
+
+# Run the complete yield calculation process with GUI
+success = add_yield_columns()
+```
+
+#### Advanced Usage
+
+```python
+from src.utils.yield_calculator import YieldCalculator
+
+# Create calculator instance for step-by-step control
+calculator = YieldCalculator()
+
+# Step 1: Select input file
+input_file = calculator.select_input_file()
+
+# Step 2: Load the file
+calculator.load_excel_file()
+
+# Step 3: Add yield columns with custom methods
+calculator.add_yield_columns('default', 'column_name_here')
+
+# Step 4: Save the result
+calculator.save_processed_file()
 ```
 
 ## How It Works
+
+### Excel Merger Process
 
 1. **File Selection**: 
    - Opens GUI dialogs to select main and secondary Excel files
    - Main file will be updated with new data
    - Secondary file contains data to be merged
 
-2. **Data Loading**:
-   - Loads both Excel files into pandas DataFrames
+2. **Multi-Sheet Detection**:
+   - Scans both files to identify available sheets
+   - Finds sheets with matching names for processing
+   - Preserves sheets that exist only in the main file
+
+3. **Data Loading**:
+   - Loads all sheets from both Excel files into pandas DataFrames
    - Handles various Excel formats (.xlsx, .xls)
 
-3. **Column Alignment**:
+4. **Column Alignment**:
    - Ensures both files have the same column structure
    - Adds missing columns with null values
 
-4. **Duplicate Detection**:
-   - Compares all rows between the two files
+5. **Duplicate Detection**:
+   - Compares all rows between the two files (per sheet)
    - Uses row-wise hashing for efficient comparison
    - Identifies unique rows that don't exist in the main file
 
-5. **Merging**:
+6. **Merging**:
    - Adds only non-duplicate rows to the main file
+   - Processes each matching sheet independently
    - Preserves original data structure
 
-6. **Saving**:
+7. **Saving**:
    - Creates a backup of the original main file
-   - Saves the merged data to the main file location
-   - Provides detailed summary of changes
+   - Saves the merged data with all sheets
+   - Provides detailed per-sheet summary of changes
+
+### Yield Calculator Process
+
+1. **File Selection**:
+   - Opens GUI dialog to select Excel file for processing
+   - Can handle both single-sheet and multi-sheet files
+
+2. **Data Loading**:
+   - Loads all sheets from the Excel file
+   - Analyzes existing column structure
+
+3. **Calculation Method Selection**:
+   - User specifies calculation methods for e_yield and asm_yield
+   - Supports multiple calculation approaches:
+     - **Default**: Sets all values to 0.0
+     - **Column Copy**: Copies values from existing columns
+     - **Formula**: Uses pandas expressions for calculations
+
+4. **Yield Calculation**:
+   - Applies specified calculations to each sheet
+   - Handles errors gracefully with fallback to default values
+   - Maintains data integrity throughout processing
+
+5. **Column Addition**:
+   - Adds e_yield and asm_yield columns to all sheets
+   - Preserves original data and structure
+
+6. **Saving**:
+   - Creates backup of original file
+   - Saves processed file with new yield columns
+   - Provides detailed summary of processing results
+
+## Calculation Methods
+
+### Yield Calculator Methods
+
+- **'default'**: Sets all yield values to 0.0
+- **'column_name'**: Copies values from an existing column (e.g., 'existing_yield')
+- **'formula'**: Uses pandas expressions for complex calculations
+
+#### Formula Examples:
+```python
+# Percentage calculation
+'pass_count / total_count * 100'
+
+# Yield with efficiency factor
+'good_units / tested_units * 0.95'
+
+# Combined calculation
+'(pass_units + rework_units) / total_units * 100'
+```
 
 ## File Structure
 
 ```
-src/
-├── utils/
-│   ├── __init__.py
-│   └── excel_merger.py      # Main merger module
-├── demo_excel_merger.py     # Demo script
-├── requirements.txt         # Dependencies
-└── README.md               # This file
+yield_data_mining/
+├── src/
+│   └── utils/
+│       ├── __init__.py
+│       ├── excel_merger.py      # Excel file merger module
+│       └── yield_calculator.py  # Yield calculation module
+├── demo_excel_merger.py         # Excel merger demo script
+├── demo_yield_calculator.py     # Yield calculator demo script
+├── requirements.txt             # Dependencies
+└── README.md                   # This file
 ```
 
 ## Example Workflow
 
-1. **Run the merger**:
-   ```bash
-   python demo_excel_merger.py
-   ```
+### Complete Data Processing Pipeline
 
-2. **Select main file**: Choose the Excel file you want to update
-3. **Select secondary file**: Choose the Excel file with new data to add
-4. **Review results**: The tool will show:
-   - Number of rows in original file
-   - Number of new unique rows found
-   - Number of duplicates detected
-5. **Confirm save**: Choose whether to save the merged file
+```python
+# Step 1: Merge Excel files
+from src.utils.excel_merger import merge_excel_files
+success = merge_excel_files()
 
-## Error Handling
+# Step 2: Add yield columns to the merged file
+from src.utils.yield_calculator import add_yield_columns
+success = add_yield_columns()
+```
 
-- **File Format Validation**: Ensures files are valid Excel formats
-- **Column Mismatch**: Automatically handles different column structures
-- **Memory Management**: Efficient processing of large files
-- **Backup Creation**: Automatic backup before overwriting files
-- **User Feedback**: Clear error messages and progress updates
+This creates a complete pipeline for:
+1. Merging multiple Excel data sources
+2. Adding standardized yield calculation columns
+3. Preparing data for further analysis
 
-## Logging
+## Dependencies
 
-The module provides detailed logging information:
-- File loading progress
-- Duplicate detection results
-- Column alignment changes
-- Save operation status
-
-## Limitations
-
-- Both files must be Excel format (.xlsx or .xls)
-- Duplicate detection is based on exact row matching
-- Large files may require significant memory
-- GUI requires a display (not suitable for headless servers)
-
-## Troubleshooting
-
-**Import Error**: Make sure you're running from the project root directory and have installed dependencies.
-
-**File Selection Cancelled**: The GUI dialogs require user interaction - make sure to select both files.
-
-**Memory Issues**: For very large files, consider processing in chunks or using a more powerful machine.
-
-**Permission Errors**: Ensure you have write permissions for the main file location.
-
-## Contributing
-
-To contribute to this module:
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
+- `pandas>=1.5.0` - Data manipulation and analysis
+- `openpyxl>=3.1.0` - Excel file reading/writing
+- `xlrd>=2.0.0` - Excel file reading support
+- `numpy>=1.24.0` - Numerical computing
+- `tkinter` - GUI dialogs (usually included with Python)
 
 ## License
 
-This project is licensed under the MIT License.
+This project is provided as-is for educational and development purposes.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## Support
+
+For issues or questions:
+1. Check the console logs for detailed error messages
+2. Ensure all dependencies are installed correctly
+3. Verify that Excel files are not corrupted or password-protected
+4. Check that file paths are accessible and writable
