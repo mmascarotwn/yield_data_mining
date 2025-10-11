@@ -1,13 +1,13 @@
 # Core dependencies for Excel merger
-pandas>=1.5.0
-openpyxl>=3.1.0
+pandas>=1.5.0 # TO-DO: check if correct version
+openpyxl>=3.1.5
 xlrd>=2.0.0
 
 # GUI dependencies
 tkinter  # Usually comes with Python, but listed for completeness
 
 # Optional: Additional data analysis libraries
-numpy>=1.24.0
+numpy>=1.24.0 # TO-DO: check if correct version
 
 # Web scraping dependencies (optional - for web_scraper.py)
 # Install these if you plan to use the web scraping functionality:
