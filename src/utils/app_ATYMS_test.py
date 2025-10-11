@@ -39,7 +39,14 @@ time.sleep(45) # Let the user actually see something!
 # search_box = driver.find_element("name", "ID")
 # product_group_span = driver.find_element(By.XPATH, "//select[text()='HBM3E (12H)']")
 
-product_group_span = driver.find_element(By.XPATH, "//span[@class='ng-value-label ng-star-inserted']/div[text()='HBM3E (12H)']")
+timeout=10
+wait = WebDriverWait(driver, timeout)
+# product_group_span = driver.find_element(By.XPATH, "//span[@class='ng-value-label ng-star-inserted']/div[text()='HBM3E (12H)']")
+product_group_span = wait.until(EC.element_to_be_clickable((By.XPATH, 
+                "//ng-select[contains(@class, 'ng-select')]//span[contains(text(), 'HBM3E (12H)')]/ancestor::ng-select"
+            ))
+        )
+
 product_group_span.click()
 time.sleep(10)
 
