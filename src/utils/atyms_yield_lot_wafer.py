@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from pyvirtualdisplay import Display
 
 
-## Inputs declaration
+## Inputs declaration (to be changed if needed by the user)
 link_web_page = 'https://o2-instance.si-ose-mfgt1-vip.sing.micron.com/ATYMS/#/?c.Category=Apps&c.Module=AT-Yield-Report&c.View=HBMYield&c.Tab=HBM-Test-Report'
 
 hbm3e_12h_id_code = "//span[text()='HBM3E (12H)']"
@@ -207,6 +207,8 @@ def select_C2PP_filter(driver = None, timeout = None, data_step = None):
 def select_date_filter(driver = None, timeout = None, data_date = None):
     """
     Click the latest month data set available (fixed to '202510') # TO-DO: make it depending on current month
+    TO-DO: 
+        1) implement a method to aoutomatically select the latest data available by month on the ATYMS website;
     """
     data_point = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, data_date)))
     driver.execute_script("arguments[0].scrollIntoView(true);", data_point)
@@ -306,4 +308,4 @@ def hbm4_rlc_data(a=None):
 ###
 hbm4_qlc_data()
 hbm4_dpm_data()
-hbm4_rlc_data()
+# hbm4_rlc_data()
