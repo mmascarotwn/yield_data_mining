@@ -15,7 +15,7 @@ current_dir = Path(__file__).parent
 src_dir = current_dir / "src"
 sys.path.insert(0, str(src_dir))
 
-from utils.excel_merger import merge_excel_files
+from utils.merge_excel_files import merge_excel_files
 from utils.yield_calculator import add_yield_columns
 
 def main():

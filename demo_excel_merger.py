@@ -13,7 +13,7 @@ project_root = Path(__file__).parent
 src_path = project_root / 'src'
 sys.path.insert(0, str(src_path))
 
-from utils.excel_merger import merge_excel_files, ExcelMerger
+from utils.merge_excel_files import merge_excel_files, ExcelMerger
 
 
 def main():
