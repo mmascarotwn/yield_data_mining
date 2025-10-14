@@ -190,6 +190,73 @@ def submit_lot_status_report(driver = None, timeout = None, lot_id = None):
     
     return
 
+## Function to match the wafers and find the right LOT_ID on MAMASMTB
+def find_matching_lot_and_update_excel(driver=None, timeout=None, wafer_id_in_mam=None, excel_file_path=None):
+    """
+    Searches through LOT IDs and updates the Excel file with the matching LOT ID for the given wafer ID.
+    """
+    try:
+        # Step 1: Extract all LOT IDs from the dropdown
+        select_element = WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.NAME, "ID"))
+        )
+        options = select_element.find_elements(By.TAG_NAME, "option")
+        lot_ids = [opt.get_attribute("value") for opt in options if opt.get_attribute("value")]
+        print("Available LOT IDs:", lot_ids)
+
+        # Step 2: Iterate through each LOT ID
+        for lot_id in lot_ids:
+            Select(driver.find_element(By.NAME, "ID")).select_by_value(lot_id)
+            print(f"Selected LOT ID: {lot_id}")
+
+            # Step 3: Click the SUBMIT button --------------------------------------> PROBLEM IS HERE
+            try:
+                submit_button = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.XPATH, "//input[@type='SUBMIT']")))
+                driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
+                WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.NAME, "SUBMIT")))
+                submit_button.click()
+                print("Clicked SUBMIT button.")
+                time.sleep(2)
+
+            except Exception as e:
+                print(f"Standard click failed: {e}. Trying JS click.")
+                try:
+                    driver.execute_script("arguments[0].click();", submit_button)
+                    print("Clicked SUBMIT button via JS.")
+                except Exception as js_e:
+                    print(f"JavaScript click also failed: {js_e}")
+                    continue  # Skip to next LOT ID
+
+            # Step 4: Extract wafer numbers from the new page
+            wafer_elements = WebDriverWait(driver, timeout).until(
+                EC.presence_of_all_elements_located((By.XPATH, "//tr[@class='ReportRow1']//td[@class='ReportCellAlt']"))
+            )
+            wafer_numbers = [el.text.strip() for el in wafer_elements]
+            print("Extracted wafer numbers:", wafer_numbers)
+
+            # Step 5: Check for match
+            if wafer_id_in_mam in wafer_numbers:
+                print(f"Match found: {lot_id}")
+
+                # Step 6: Update Excel file
+                df = pd.read_excel(excel_file_path, sheet_name='hbm_test_yield', engine='openpyxl')
+                if 'LOT ID' not in df.columns:
+                    df['LOT ID'] = None
+                df.loc[df['wafer_id_in_mam'] == wafer_id_in_mam, 'LOT ID'] = lot_id
+                df.to_excel(excel_file_path, sheet_name='hbm_test_yield', index=False, engine='openpyxl')
+                break
+
+            # Step 7: Go back to the LOT selection page
+            driver.back()
+
+    except Exception as e:
+        print(f"Error in matching LOT ID and updating Excel: {e}")
+    
+    return
+
+## ----------
+## ----------
+
 ## Function to open the selectable window for Product Group of interest
 def select_product_window(driver = None, timeout = None):
     """
@@ -384,6 +451,7 @@ def lot_search(a=None):
     wafer_MAM_web_page = open_wfr_status_report_website(driver, dynamic_link_web_page)
     read_fab_lot_number = extract_fab_lot_number(driver, timeout)
     search_lot_MAM = submit_lot_status_report(driver, timeout, read_fab_lot_number)
+    search_wafers_match_MAM = find_matching_lot_and_update_excel(driver, timeout, read_wafer_id, select_excel_file)
     # hit_search_bar = press_enter_in_search_bar(driver, timeout)
     quit = quit_script(driver, timeout)
 
