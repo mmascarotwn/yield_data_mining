@@ -8,12 +8,15 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+# import pygetwindow as gw
 from pyvirtualdisplay import Display
 
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
+import os
 import pandas as pd
+from openpyxl import load_workbook
 
 
 ## Inputs declaration (to be changed if needed by the user)
@@ -32,14 +35,14 @@ c2pp_data_step_code = "//button[contains(text(), 'C2PP')]" # ATYMS gives all dat
 data_date_code = 'path[aria-label*="Month 202510, C2PP"]' # Change this date to be automatically detected later on
 
 
-## Driver path and windows timing
+## Driver path (local PC) and windows timing setting
 web_driver = r"C:\Users\mmascaro\Documents\VisualStudio Projects\venv_test_project\chromedriver.exe"
-timeout = 10
+timeout = 0.5
 sleep = 0
 
 ## Setup to minimise the web page on screen (WIP)
 chrome_options = Options()
-chrome_options.add_argument("--headless=new") # Run in headless mode
+chrome_options.add_argument("--start-minimized") # Run in headless mode
 chrome_options.add_argument("--disable-gpu") # Recommended for headless
 chrome_options.add_argument("--no-sandbox") # Often required for headless mode, especially in Linux environments
 chrome_options.add_argument("--disable-dev-shm-usage") # Often required for headless mode, especially in Linux environments
@@ -53,6 +56,11 @@ def chrome_web_driver(web_driver_path = None):
     # Step 1: Text here
     s = Service(web_driver)
     driver = webdriver.Chrome(service = s)  # Optional argument, if not specified will search path.
+
+    # # Minimize the Chrome window
+    # for window in gw.getWindowsWithTitle('Chrome'):
+    #     window.minimize()
+
 
     if not driver:
         print("Error: No driver specified/found.")
@@ -68,14 +76,15 @@ def open_excel_dialogue(input = None):
     return excel_file
 
 # Function to read the first row and extract 'wafer_id_in_mam'
-def load_wafer_id_excel(excel_file = None):
-    df = pd.read_excel(excel_file, sheet_name='hbm_test_yield', engine='openpyxl')
-    wafer_id = df.loc[0, 'wafer_id_in_mam']
-    # print(wafer_id)
-
+def load_wafer_id_excel(excel_file=None):
     if not excel_file:
         print("Error: No excel_file specified/found.")
         return
+
+    df = pd.read_excel(excel_file, sheet_name='hbm_test_yield', engine='openpyxl')
+    
+    # Read all wafer IDs from the column
+    wafer_id= df['wafer_id_in_mam'].dropna().astype(str).tolist()
 
     return wafer_id
 
@@ -91,8 +100,7 @@ def generate_dynamic_url(wafer_id):
     str: The modified URL with the new lot ID.
     """
     base_url = f"http://mamweb.tatw.micron.com/MAMWeb/bin/MAMWeb.pl?APP=ASMTB&ACTION=REPORT&REPORTID=Status&XSLT=CLIENT&ID={wafer_id}&MATYPE=80&FORMAT=HTML&ORIGIN=/MAMWeb/site/ASMTB"
-    print(wafer_id)
-    print(base_url)
+    # print("base_url is:", base_url)
     
     if not wafer_id:
         print("Error: No lot_id specified/found.")
@@ -107,7 +115,7 @@ def open_wfr_status_report_website(driver = None, link_web_page = None):
     """
     # Step 1: Text here
     driver.get(link_web_page)
-    time.sleep(45) # Let the user actually see something!
+    time.sleep(5) # Let the user actually see something!
 
     if not link_web_page :
         print("Error: No web page link found/provided.")
@@ -127,7 +135,7 @@ def press_enter_in_search_bar(driver = None, timeout = None):
 
     search_input = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, "//input[@type='text']")))
     search_input.send_keys(Keys.ENTER)
-    print("ENTER key pressed in the search bar.")
+    # print("ENTER key pressed in the search bar.")
 
     return
 
@@ -215,16 +223,16 @@ def find_matching_lot_and_update_excel(driver=None, timeout=None, wafer_id_in_ma
                 driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
                 WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.NAME, "SUBMIT")))
                 submit_button.click()
-                print("Clicked SUBMIT button.")
-                time.sleep(2)
+                # print("Clicked SUBMIT button.")
+                time.sleep(0.5)
 
             except Exception as e:
-                print(f"Standard click failed: {e}. Trying JS click.")
+                # print(f"Standard click failed: {e}. Trying JS click.")
                 try:
                     driver.execute_script("arguments[0].click();", submit_button)
-                    print("Clicked SUBMIT button via JS.")
+                    # print("Clicked SUBMIT button via JS.")
                 except Exception as js_e:
-                    print(f"JavaScript click also failed: {js_e}")
+                    # print(f"JavaScript click also failed: {js_e}")
                     continue  # Skip to next LOT ID
 
             # Step 4: Extract wafer numbers from the new page
@@ -238,15 +246,39 @@ def find_matching_lot_and_update_excel(driver=None, timeout=None, wafer_id_in_ma
             if wafer_id_in_mam in wafer_numbers:
                 print(f"Match found: {lot_id}")
 
-                # Step 6: Update Excel file
+            # Step 6: Update Excel file
                 df = pd.read_excel(excel_file_path, sheet_name='hbm_test_yield', engine='openpyxl')
                 if 'LOT ID' not in df.columns:
                     df['LOT ID'] = None
+
+                # Ensure matching works even if types differ
+                df['wafer_id_in_mam'] = df['wafer_id_in_mam'].astype(str)
+                wafer_id_in_mam = str(wafer_id_in_mam)
+
+                # Update the matching row
                 df.loc[df['wafer_id_in_mam'] == wafer_id_in_mam, 'LOT ID'] = lot_id
-                df.to_excel(excel_file_path, sheet_name='hbm_test_yield', index=False, engine='openpyxl')
+
+                # Save back to the same sheet without affecting other sheets
+                from openpyxl import load_workbook
+                book = load_workbook(excel_file_path)
+
+                with pd.ExcelWriter(excel_file_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                    writer._book = book
+                    writer._sheets = {ws.title: ws for ws in book.worksheets}
+                    df.to_excel(writer, sheet_name='hbm_test_yield', index=False)
+
+            # # Step 7: Rename the file if needed
+            #     base, ext = os.path.splitext(excel_file_path)
+            #     if not base.endswith('integrated_data'):
+            #         new_file_path = f"{base}_integrated_data{ext}"
+            #         os.rename(excel_file_path, new_file_path)
+            #         print(f"File renamed to: {new_file_path}")
+            #     else:
+            #         print("Filename already includes 'integrated_data'. No renaming needed.")
+
                 break
 
-            # Step 7: Go back to the LOT selection page
+            # Step 8: Go back to the LOT selection page
             driver.back()
 
     except Exception as e:
@@ -442,18 +474,32 @@ def quit_script(driver = None, timeout = None):
 ###
 ### Functions grouping
 ###
+
 def lot_search(a=None):
     select_excel_file = open_excel_dialogue()
     read_wafer_id = load_wafer_id_excel(select_excel_file)
-    generale_url = generate_dynamic_url(read_wafer_id)
-    driver = chrome_web_driver(web_driver)
-    dynamic_link_web_page = generate_dynamic_url(generale_url)
-    wafer_MAM_web_page = open_wfr_status_report_website(driver, dynamic_link_web_page)
-    read_fab_lot_number = extract_fab_lot_number(driver, timeout)
-    search_lot_MAM = submit_lot_status_report(driver, timeout, read_fab_lot_number)
-    search_wafers_match_MAM = find_matching_lot_and_update_excel(driver, timeout, read_wafer_id, select_excel_file)
-    # hit_search_bar = press_enter_in_search_bar(driver, timeout)
-    quit = quit_script(driver, timeout)
+    print(read_wafer_id)
+
+    for wafer in read_wafer_id:
+        print(f"Processing wafer ID: {wafer}")
+
+        generale_url = generate_dynamic_url(wafer)  # Pass single wafer ID
+        driver = chrome_web_driver(web_driver)
+        dynamic_link_web_page = generate_dynamic_url(generale_url)
+        wafer_MAM_web_page = open_wfr_status_report_website(driver, dynamic_link_web_page)
+        read_fab_lot_number = extract_fab_lot_number(driver, timeout)
+        search_lot_MAM = submit_lot_status_report(driver, timeout, read_fab_lot_number)
+        search_wafers_match_MAM = find_matching_lot_and_update_excel(driver, timeout, wafer, select_excel_file)
+        quit = quit_script(driver, timeout)
+
+    # # Rename the Excel file only once after all operations
+    # base, ext = os.path.splitext(select_excel_file)
+    # if not base.endswith('integrated_data'):
+    #     new_file_path = f"{base}_integrated_data{ext}"
+    #     os.rename(select_excel_file, new_file_path)
+    #     print(f"Excel file renamed to: {new_file_path}")
+    # else:
+    #     print("Excel file already includes 'integrated_data'. No renaming needed.")
 
 def hbm4_dpm_data(a=None):
     # Step 1: Text here
