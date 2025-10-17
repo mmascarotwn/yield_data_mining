@@ -37,7 +37,7 @@ data_date_code = 'path[aria-label*="Month 202510, C2PP"]' # Change this date to 
 
 ## Driver path (local PC) and windows timing setting
 web_driver = r"C:\Users\mmascaro\Documents\VisualStudio Projects\venv_test_project\chromedriver.exe"
-timeout = 0.5
+timeout = 2 # 0.5
 sleep = 0
 
 ## Setup to minimise the web page on screen (WIP)
@@ -205,19 +205,19 @@ def find_matching_lot_and_update_excel(driver=None, timeout=None, wafer_id_in_ma
     """
     try:
         # Step 1: Extract all LOT IDs from the dropdown
-        select_element = WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((By.NAME, "ID"))
-        )
+        # select_element = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.NAME, "ID")))
+        select_element = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, "//select[@name='ID']")))
         options = select_element.find_elements(By.TAG_NAME, "option")
+
         lot_ids = [opt.get_attribute("value") for opt in options if opt.get_attribute("value")]
-        print("Available LOT IDs:", lot_ids)
+        print("Available LOT IDs:", lot_ids) 
 
         # Step 2: Iterate through each LOT ID
         for lot_id in lot_ids:
             Select(driver.find_element(By.NAME, "ID")).select_by_value(lot_id)
             print(f"Selected LOT ID: {lot_id}")
 
-            # Step 3: Click the SUBMIT button --------------------------------------> PROBLEM IS HERE
+            # Step 3: Click the SUBMIT button 
             try:
                 submit_button = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.XPATH, "//input[@type='SUBMIT']")))
                 driver.execute_script("arguments[0].scrollIntoView(true);", submit_button)
@@ -236,9 +236,7 @@ def find_matching_lot_and_update_excel(driver=None, timeout=None, wafer_id_in_ma
                     continue  # Skip to next LOT ID
 
             # Step 4: Extract wafer numbers from the new page
-            wafer_elements = WebDriverWait(driver, timeout).until(
-                EC.presence_of_all_elements_located((By.XPATH, "//tr[@class='ReportRow1']//td[@class='ReportCellAlt']"))
-            )
+            wafer_elements = WebDriverWait(driver, timeout).until(EC.presence_of_all_elements_located((By.XPATH, "//tr[@class='ReportRow1' or @class='ReportRow0']//td[@class='ReportCellAlt']")))
             wafer_numbers = [el.text.strip() for el in wafer_elements]
             print("Extracted wafer numbers:", wafer_numbers)
 
@@ -299,6 +297,7 @@ def quit_script(driver = None, timeout = None):
         return
 
     return 
+
 
 ###
 ### Functions grouping
