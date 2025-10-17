@@ -16,7 +16,7 @@ src_dir = current_dir / "src"
 sys.path.insert(0, str(src_dir))
 
 from utils.yt_merge_tables import merge_excel_files
-from utils.dint_yield_calculator import add_yield_columns
+from utils.yt_dint_yield_calculator import add_yield_columns
 
 def main():
     """
