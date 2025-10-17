@@ -75,16 +75,26 @@ def open_excel_dialogue(input = None):
 
     return excel_file
 
-# Function to read the first row and extract 'wafer_id_in_mam'
+# Function to read all the wafer id from the excel file 'wafer_id_in_mam' 
+# & only the ones with out a target additional parameter to add yet (ex: LOT_ID)
 def load_wafer_id_excel(excel_file=None):
     if not excel_file:
         print("Error: No excel_file specified/found.")
         return
 
+    # Load the Excel sheet
     df = pd.read_excel(excel_file, sheet_name='hbm_test_yield', engine='openpyxl')
-    
-    # Read all wafer IDs from the column
-    wafer_id= df['wafer_id_in_mam'].dropna().astype(str).tolist()
+
+    # Check if 'LOT_ID' column exists
+    lot_id_exists = 'LOT_ID' in df.columns
+
+    # Filter wafer_id based on the presence and content of 'LOT_ID'
+    if not lot_id_exists:
+        wafer_id = df['wafer_id_in_mam'].dropna().astype(str).tolist()
+    else:
+        # Only include wafer_id where LOT_ID is empty (NaN or empty string)
+        filtered_df = df[df['LOT_ID'].isna() | (df['LOT_ID'].astype(str).str.strip() == '')]
+        wafer_id = filtered_df['wafer_id_in_mam'].dropna().astype(str).tolist()
 
     return wafer_id
 
@@ -199,6 +209,7 @@ def submit_lot_status_report(driver = None, timeout = None, lot_id = None):
     return
 
 ## Function to match the wafers and find the right LOT_ID on MAMASMTB
+## TO-DO: separate the excel save function from the matching function
 def find_matching_lot_and_update_excel(driver=None, timeout=None, wafer_id_in_mam=None, excel_file_path=None):
     """
     Searches through LOT IDs and updates the Excel file with the matching LOT ID for the given wafer ID.
@@ -246,15 +257,15 @@ def find_matching_lot_and_update_excel(driver=None, timeout=None, wafer_id_in_ma
 
             # Step 6: Update Excel file
                 df = pd.read_excel(excel_file_path, sheet_name='hbm_test_yield', engine='openpyxl')
-                if 'LOT ID' not in df.columns:
-                    df['LOT ID'] = None
+                if 'LOT_ID' not in df.columns:
+                    df['LOT_ID'] = None
 
                 # Ensure matching works even if types differ
                 df['wafer_id_in_mam'] = df['wafer_id_in_mam'].astype(str)
                 wafer_id_in_mam = str(wafer_id_in_mam)
 
                 # Update the matching row
-                df.loc[df['wafer_id_in_mam'] == wafer_id_in_mam, 'LOT ID'] = lot_id
+                df.loc[df['wafer_id_in_mam'] == wafer_id_in_mam, 'LOT_ID'] = lot_id
 
                 # Save back to the same sheet without affecting other sheets
                 from openpyxl import load_workbook
