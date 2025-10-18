@@ -73,6 +73,33 @@ def add_fid(df):
         )
     return df
 
+def add_lot_id(df):
+    def extract_lot_id(log_str):
+        try:
+            parts = log_str.split('.')
+            if len(parts) >= 2:
+                return '.'.join(parts[:2])
+            return log_str
+        except:
+            return ''
+    
+    if 'LOG' in df.columns:
+        df['LOT_ID'] = df['LOG'].apply(extract_lot_id)
+    return df
+
+def add_wafer_id(df):
+    def create_wafer_string(row):
+        try:
+            lot = str(row['LOT'])
+            wafer = str(row['WAFER'])
+            return f"{lot[-4:]}-{wafer}:{lot}"
+        except:
+            return ''
+    
+    if all(col in df.columns for col in ['LOT', 'WAFER']):
+        df['WAFER_ID'] = df.apply(create_wafer_string, axis=1)
+    return df
+
 def add_retest_column(df):
     def extract_retest(log_str):
         try:
@@ -102,6 +129,8 @@ def process_file(file_path):
     df = add_D4_7_column(df)
     df = add_D8_11_column(df)
     df = add_fid (df)
+    df = add_lot_id(df)
+    df = add_wafer_id(df)
     df = add_retest_column(df)
     df = flag_latest_retest(df)
     df.to_csv(file_path, index=False)
